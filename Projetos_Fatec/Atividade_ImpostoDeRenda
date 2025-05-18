@@ -1,0 +1,177 @@
+package exercise1;
+
+import java.util.Scanner;
+
+public class ex11 {
+
+	public static void main(String[] args) {
+		// TODO Auto-generated method stub
+		Scanner sc = new Scanner(System.in);
+
+
+
+
+		double salario,total,impostos, total_imposto, imposto13;
+
+		int igual;
+
+		total = 0;
+		total_imposto = 0;
+
+		System.out.println("Informe a sua renda mensal de janeiro: ");
+		salario = sc.nextDouble();
+		sc.nextLine();
+		impostos = imposto_renda(salario);
+
+		total_imposto += impostos;
+
+		total += salario;
+
+		System.out.println("Digite seu CPF");
+        String cpf = sc.nextLine();
+		System.out.println("Informe seu nome");
+		String nome = sc.nextLine();
+		System.out.println("Prazer "+ nome);
+
+
+		for ( int i = 0; i < 11; i++) {
+
+
+		System.out.println("Sua renda do mês atual é igual ao mês anterior?: Sim (1) ou Não (2) ");
+
+		igual = sc.nextInt();
+		
+		if (igual == 1) {
+
+		total = total + salario;
+
+		impostos = imposto_renda(salario);
+
+		total_imposto += impostos;
+
+		}
+
+		if (igual == 2) {
+
+		System.out.println("Informe seus novo salário: ");
+
+		salario = sc.nextDouble();
+
+		total += salario;
+
+		impostos = imposto_renda(salario);
+
+		total_imposto += impostos;
+
+		}
+
+		}
+		
+		System.out.println("Você recebe o 13º salário (1:Sim/2:Não) ?");
+		int opcao = sc.nextInt();
+		sc.nextLine();
+		imposto13 = 0;
+		if (opcao == 1 ) {
+			System.out.println("Digite o valor do seu 13º:");
+			double valor = sc.nextDouble()*0.8;
+		
+			if (valor <= 2259.20) {
+
+				imposto13 = 0;
+
+
+				} else if (valor >= 2259.21 && valor <= 2826.65 ) {
+
+				imposto13=valor*0.075;
+
+				imposto13 -= 169.44;
+
+				} else if (valor >= 2826.66 && valor <= 3751.05 ) {
+
+				imposto13=valor*0.15;
+
+				imposto13 -= 381.44;
+
+				} else if (valor>=3751.06 && valor<=4664.68) {
+
+				imposto13=valor*0.225;
+
+				imposto13 -= 662.77;
+
+				} else {
+
+				imposto13=valor*0.275;
+
+				imposto13 -= 896;
+
+				}
+
+			
+		}
+		sc.close();
+		
+
+		System.out.println("Seu nome é: "+ nome);
+
+		System.out.println("Seu CPF é: "+ cpf);
+
+		System.out.println("A sua renda total é: "+total);
+
+		System.out.println("Você terá que pagar R$ "+total_imposto+" em impostos");
+
+		System.out.println("O imposto do seu 13º é: "+imposto13);
+		
+		}
+
+
+
+		static double imposto_renda(double salario) {
+
+		salario = 0.8*salario;
+
+		double imposto;
+
+		if (salario <= 2259.20) {
+
+		return 0;
+
+
+		} else if (salario >= 2259.21 && salario <= 2826.65 ) {
+
+		imposto=salario*0.075;
+
+		imposto -= 169.44;
+
+		return imposto;
+
+		} else if (salario >= 2826.66 && salario <= 3751.05 ) {
+
+		imposto=salario*0.15;
+
+		imposto -= 381.44;
+
+		return imposto;
+
+		} else if (salario>=3751.06 && salario<=4664.68) {
+
+		imposto=salario*0.225;
+
+		imposto -= 662.77;
+
+		return imposto;
+
+		} else {
+
+		imposto=salario*0.275;
+
+		imposto -= 896;
+
+		return imposto;
+
+		}
+
+		}
+
+	}
+
+
