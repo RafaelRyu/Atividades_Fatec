@@ -1,0 +1,55 @@
+package projeto;
+
+public class ex01 {
+
+	public static void main(String[] args) {
+		
+		int maior;
+		
+		int[] num1 = {4,7,1,3,4};
+		int[] num2 = {3,87,3,8,4};
+        int[] sum = new int[5];
+        
+        
+        // Assumindo que os dois arrays tem a mesma quantidade de elementos
+       for (int i = 0; i< sum.length; i++) { 
+    	   sum[i] = num1[i] + num2[i];
+       };
+       
+       System.out.println("Tabela com os três arrays: ");
+       mostrar(num1);
+      mostrar(num2);
+      mostrar(sum);
+       
+       System.out.println("Números Ímpares da Array Soma:");
+      for (int i = 0; i<sum.length; i++) {
+    	  if ((sum[i] % 2) != 0) {
+    		  System.out.print("\t"+sum[i]);
+    	  }
+      }
+      
+       // Assumindo que o maior valor sempre se encontrará no array sum
+      
+      maior = sum[0];
+      for (int i = 0; i < (sum.length-1); i++) {
+    	  
+    	  if (maior < sum[i+1]) {
+    		  maior = sum[i+1];
+    	  }
+    	  
+      };
+      System.out.println();
+      
+      System.out.println("O maior valor do array soma é: "+maior);
+       
+	}
+	
+	static void mostrar(int[] nums) {
+		for ( int i = 0; i < nums.length; i++ ) {
+			int num = nums[i];
+			System.out.print("\t"+num);
+		}
+		System.out.println();
+	}
+
+}
