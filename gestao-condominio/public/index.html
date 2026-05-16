@@ -1,0 +1,1263 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Condomínio</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Sistema de Gestão de Condomínio</h1>
+        
+        <!-- Condomínios -->
+        <div class="section">
+            <h2>Condomínios</h2>
+            <div class="form-group">
+                <input type="text" id="condNome" placeholder="Nome do condomínio">
+                <input type="number" id="condVagas" placeholder="Número de vagas">
+                <button onclick="createCondominio()">Adicionar</button>
+            </div>
+            <div id="condominiosList"></div>
+        </div>
+        
+        <!-- Salas -->
+        <div class="section">
+            <h2>Salas</h2>
+            <div class="form-group">
+                <select id="salaCondominioId"></select>
+                <input type="text" id="salaNome" placeholder="Nome da sala">
+                <button onclick="createSala()">Adicionar</button>
+            </div>
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" id="mostrarApenasDisponiveis" onchange="loadSalas()">
+                    Mostrar apenas salas disponíveis
+                </label>
+            </div>
+            <div id="salasList"></div>
+        </div>
+        
+        <!-- Residentes -->
+        <div class="section">
+            <h2>Residentes</h2>
+            <div class="form-group">
+                <select id="resCondominioId"></select>
+                <input type="text" id="resNome" placeholder="Nome do residente">
+                <input type="number" id="resVeiculos" placeholder="Nº de veículos">
+            </div>
+            <div class="form-group">
+                <label style="display: flex; align-items: center; gap: 10px;">
+                    <input type="checkbox" id="resIsEspecial" onchange="toggleVagaReservada()">
+                    <span>Morador Especial (Síndico, Gerente, etc.)</span>
+                </label>
+                <select id="resTipoEspecial" style="display: none;">
+                    <option value="sindico">Síndico</option>
+                    <option value="gerente">Gerente</option>
+                    <option value="zelador">Zelador</option>
+                    <option value="outro">Outro</option>
+                </select>
+                <input type="number" id="resVagaReservada" placeholder="Nº da vaga reservada" style="display: none;">
+                <button onclick="createResidente()">Adicionar</button>
+            </div>
+            <div id="residentesList"></div>
+        </div>
+        
+        <!-- Utensílios -->
+        <div class="section">
+            <h2>Utensílios de Cozinha</h2>
+            <div class="form-group">
+                <select id="utilCondominioId"></select>
+                <input type="text" id="utilNome" placeholder="Nome do utensílio">
+                <button onclick="createUtensilio()">Adicionar</button>
+            </div>
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" id="mostrarApenasDisponiveisUtil" onchange="loadUtensilios()">
+                    Mostrar apenas utensílios disponíveis
+                </label>
+            </div>
+            <div id="utensiliosList"></div>
+        </div>
+        
+              <!-- Sorteio -->
+        <div class="section">
+            <h2>Sorteio de Vagas</h2>
+            <div class="form-group">
+                <select id="sorteioCondominioId"></select>
+                <button onclick="realizarSorteio()">Realizar Sorteio</button>
+            </div>
+            <div id="sorteioResultado"></div>
+        </div>
+        
+        <!-- Chat -->
+        <div class="section">
+            <h2>Chat do Condomínio</h2>
+            <div class="chat-container">
+                <div class="form-group">
+                    <input type="text" id="chatNome" placeholder="Seu nome">
+                    <input type="text" id="chatMensagem" placeholder="Sua mensagem">
+                    <button onclick="enviarMensagem()">Enviar</button>
+                </div>
+                <div id="chatMensagens" class="chat-messages"></div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const API_URL = 'http://localhost:3000/api';
+        
+        // Carregar dados iniciais
+        function loadAllData() {
+            loadCondominios();
+            loadSalas();
+            loadResidentes();
+            loadUtensilios();
+            loadCondominiosSelect();
+        }
+        
+        // Condomínios CRUD
+        async function loadCondominios() {
+            try {
+                const response = await fetch(`${API_URL}/condominios`);
+                if (!response.ok) throw new Error('Erro ao carregar condomínios');
+                const condominios = await response.json();
+                displayCondominios(condominios);
+            } catch (error) {
+                console.error('Erro:', error);
+                document.getElementById('condominiosList').innerHTML = '<p class="error">Erro ao carregar condomínios</p>';
+            }
+        }
+        
+        function displayCondominios(condominios) {
+            const list = document.getElementById('condominiosList');
+            if (condominios.length === 0) {
+                list.innerHTML = '<p>Nenhum condomínio cadastrado</p>';
+                return;
+            }
+            
+            list.innerHTML = condominios.map(c => `
+                <div class="item">
+                    <div class="item-info">
+                        <strong>${c.nome}</strong> - Vagas: ${c.numeroVagas}
+                    </div>
+                    <div class="item-actions">
+                        <button onclick="editCondominio('${c._id}', '${c.nome}', ${c.numeroVagas})">Editar</button>
+                        <button class="delete" onclick="deleteCondominio('${c._id}')">Excluir</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        async function createCondominio() {
+            const nome = document.getElementById('condNome').value;
+            const numeroVagas = document.getElementById('condVagas').value;
+            
+            try {
+                const response = await fetch(`${API_URL}/condominios`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nome, numeroVagas: parseInt(numeroVagas) })
+                });
+                
+                if (!response.ok) throw new Error('Erro ao criar condomínio');
+                
+                document.getElementById('condNome').value = '';
+                document.getElementById('condVagas').value = '';
+                loadCondominios();
+                loadCondominiosSelect();
+            } catch (error) {
+                alert('Erro: ' + error.message);
+            }
+        }
+        
+        function editCondominio(id, nome, vagas) {
+            const novoNome = prompt('Novo nome:', nome);
+            const novasVagas = prompt('Novo número de vagas:', vagas);
+            
+            if (novoNome && novasVagas) {
+                fetch(`${API_URL}/condominios/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nome: novoNome, numeroVagas: parseInt(novasVagas) })
+                })
+                .then(response => response.json())
+                .then(() => {
+                    loadCondominios();
+                    loadCondominiosSelect();
+                })
+                .catch(error => alert('Erro: ' + error.message));
+            }
+        }
+        
+        async function deleteCondominio(id) {
+            if (confirm('Tem certeza que deseja excluir este condomínio?')) {
+                try {
+                    const response = await fetch(`${API_URL}/condominios/${id}`, {
+                        method: 'DELETE'
+                    });
+                    
+                    if (!response.ok) throw new Error('Erro ao excluir condomínio');
+                    
+                    loadCondominios();
+                    loadCondominiosSelect();
+                } catch (error) {
+                    alert('Erro: ' + error.message);
+                }
+            }
+        }
+        
+        // Salas CRUD
+               // Salas CRUD com Reservas
+        async function loadSalas() {
+            try {
+                const condominioId = document.getElementById('salaCondominioId').value;
+                const apenasDisponiveis = document.getElementById('mostrarApenasDisponiveis')?.checked || false;
+                
+                let url = `${API_URL}/salas`;
+                const params = [];
+                if (condominioId) params.push(`condominioId=${condominioId}`);
+                if (apenasDisponiveis) params.push(`apenasDisponiveis=true`);
+                if (params.length) url += `?${params.join('&')}`;
+                
+                const response = await fetch(url);
+                if (!response.ok) throw new Error('Erro ao carregar salas');
+                const salas = await response.json();
+                displaySalas(salas);
+            } catch (error) {
+                console.error('Erro:', error);
+                document.getElementById('salasList').innerHTML = '<p class="error">Erro ao carregar salas</p>';
+            }
+        }
+        
+        function displaySalas(salas) {
+            const list = document.getElementById('salasList');
+            if (salas.length === 0) {
+                list.innerHTML = '<p>Nenhuma sala cadastrada</p>';
+                return;
+            }
+            
+            list.innerHTML = salas.map(s => {
+                const isReservada = s.reserva && s.reserva.dataExpiracao && new Date(s.reserva.dataExpiracao) > new Date();
+                const tempoRestante = isReservada ? calcularTempoRestante(s.reserva.dataExpiracao) : null;
+                
+                return `
+                    <div class="item sala-item ${!s.disponivel ? 'reservado' : ''}">
+                        <div class="item-info">
+                            <strong>${s.nome}</strong> - Condomínio: ${s.condominioId?.nome || 'N/A'}
+                            ${!s.disponivel && isReservada ? `
+                                <div class="reserva-info">
+                                    <span class="reservado-badge">🔒 RESERVADO</span>
+                                    <div class="reserva-detalhes">
+                                        <span>👤 ${escapeHtml(s.reserva.residenteNome)}</span>
+                                        <span>⏰ Expira em: ${tempoRestante}</span>
+                                        ${s.reserva.motivo ? `<span>📝 Motivo: ${escapeHtml(s.reserva.motivo)}</span>` : ''}
+                                    </div>
+                                </div>
+                            ` : s.disponivel ? '<span class="disponivel-badge">✅ DISPONÍVEL</span>' : ''}
+                        </div>
+                        <div class="item-actions">
+                            ${s.disponivel ? `
+                                <button class="reservar" onclick="abrirModalReserva('${s._id}', '${s.nome}')">Reservar</button>
+                            ` : `
+                                <button class="liberar" onclick="liberarSala('${s._id}')">Liberar</button>
+                            `}
+                            <button onclick="editSala('${s._id}', '${s.nome}', '${s.condominioId?._id}')">Editar</button>
+                            <button class="delete" onclick="deleteSala('${s._id}')">Excluir</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function calcularTempoRestante(dataExpiracao) {
+            const agora = new Date();
+            const expiracao = new Date(dataExpiracao);
+            const diffMs = expiracao - agora;
+            
+            if (diffMs <= 0) return 'Expirado';
+            
+            const diffMin = Math.floor(diffMs / 60000);
+            const horas = Math.floor(diffMin / 60);
+            const minutos = diffMin % 60;
+            
+            if (horas > 0) {
+                return `${horas}h ${minutos}min`;
+            }
+            return `${minutos}min`;
+        }
+        
+        // Modal de reserva
+        function abrirModalReserva(salaId, salaNome) {
+            // Criar modal
+            const modal = document.createElement('div');
+            modal.className = 'modal';
+            modal.id = 'modalReserva';
+            modal.innerHTML = `
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>Reservar Sala: ${escapeHtml(salaNome)}</h3>
+                        <span class="close" onclick="fecharModal()">&times;</span>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label>Selecione o Residente:</label>
+                            <select id="modalResidenteId"></select>
+                        </div>
+                        <div class="form-group">
+                            <label>Duração (horas):</label>
+                            <select id="modalHoras">
+                                <option value="1">1 hora</option>
+                                <option value="2" selected>2 horas</option>
+                                <option value="3">3 horas</option>
+                                <option value="4">4 horas</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Motivo (opcional):</label>
+                            <input type="text" id="modalMotivo" placeholder="Ex: Reunião, Festa, etc.">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button onclick="fecharModal()">Cancelar</button>
+                        <button class="confirmar" onclick="confirmarReserva('${salaId}')">Confirmar Reserva</button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            modal.style.display = 'block';
+            
+            // Carregar residentes do condomínio
+            carregarResidentesParaModal();
+        }
+        
+        async function carregarResidentesParaModal() {
+            const condominioId = document.getElementById('salaCondominioId').value;
+            if (!condominioId) {
+                alert('Selecione um condomínio primeiro');
+                fecharModal();
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/residentes?condominioId=${condominioId}`);
+                if (!response.ok) throw new Error('Erro ao carregar residentes');
+                const residentes = await response.json();
+                
+                const select = document.getElementById('modalResidenteId');
+                select.innerHTML = '<option value="">Selecione um residente</option>' +
+                    residentes.map(r => `<option value="${r._id}">${escapeHtml(r.nome)}</option>`).join('');
+            } catch (error) {
+                console.error('Erro:', error);
+                alert('Erro ao carregar residentes');
+            }
+        }
+        
+        async function confirmarReserva(salaId) {
+            const residenteId = document.getElementById('modalResidenteId').value;
+            const horas = parseInt(document.getElementById('modalHoras').value);
+            const motivo = document.getElementById('modalMotivo').value;
+            
+            if (!residenteId) {
+                alert('Selecione um residente');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/salas/${salaId}/reservar`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ residenteId, horas, motivo: motivo || null })
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.mensagem || data.error || 'Erro ao reservar sala');
+                }
+                
+                alert(data.mensagem);
+                fecharModal();
+                loadSalas();
+            } catch (error) {
+                alert('Erro: ' + error.message);
+            }
+        }
+        
+        async function liberarSala(salaId) {
+            if (!confirm('Tem certeza que deseja liberar esta sala?')) return;
+            
+            try {
+                const response = await fetch(`${API_URL}/salas/${salaId}/liberar`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || 'Erro ao liberar sala');
+                }
+                
+                alert(data.mensagem);
+                loadSalas();
+            } catch (error) {
+                alert('Erro: ' + error.message);
+            }
+        }
+        
+        function fecharModal() {
+            const modal = document.getElementById('modalReserva');
+            if (modal) {
+                modal.remove();
+            }
+        }
+        
+        // Fechar modal ao clicar fora
+        window.onclick = function(event) {
+            const modal = document.getElementById('modalReserva');
+            if (event.target === modal) {
+                fecharModal();
+            }
+        }
+        
+        async function createSala() {
+            const condominioId = document.getElementById('salaCondominioId').value;
+            const nome = document.getElementById('salaNome').value;
+            
+            if (!condominioId || !nome) {
+                alert('Preencha todos os campos');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/salas`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nome, condominioId })
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.mensagem || data.error || 'Erro ao criar sala');
+                }
+                
+                document.getElementById('salaNome').value = '';
+                loadSalas();
+                loadCondominiosSelect();
+            } catch (error) {
+                alert('Erro: ' + error.message);
+            }
+        }
+        
+        function editSala(id, nome, condominioId) {
+            const novoNome = prompt('Novo nome:', nome);
+            if (novoNome && novoNome !== nome) {
+                fetch(`${API_URL}/salas/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nome: novoNome, condominioId })
+                })
+                .then(async response => {
+                    const data = await response.json();
+                    if (!response.ok) throw new Error(data.mensagem || data.error);
+                    loadSalas();
+                })
+                .catch(error => alert('Erro: ' + error.message));
+            }
+        }
+        
+        async function deleteSala(id) {
+            if (confirm('Tem certeza que deseja excluir esta sala?')) {
+                try {
+                    const response = await fetch(`${API_URL}/salas/${id}`, {
+                        method: 'DELETE'
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (!response.ok) {
+                        throw new Error(data.mensagem || data.error || 'Erro ao excluir sala');
+                    }
+                    
+                    alert(data.message || 'Sala excluída com sucesso');
+                    loadSalas();
+                } catch (error) {
+                    alert('Erro: ' + error.message);
+                }
+            }
+        }
+        
+        // Atualizar loadCondominiosSelect para recarregar salas ao mudar condomínio
+        const originalLoadCondominiosSelectSalas = loadCondominiosSelect;
+        window.loadCondominiosSelect = async function() {
+            await originalLoadCondominiosSelectSalas();
+            const salaCondominioId = document.getElementById('salaCondominioId');
+            if (salaCondominioId) {
+                salaCondominioId.removeEventListener('change', () => loadSalas());
+                salaCondominioId.addEventListener('change', () => loadSalas());
+            }
+        };
+        
+        // Residentes CRUD
+                function toggleVagaReservada() {
+            const isEspecial = document.getElementById('resIsEspecial').checked;
+            const tipoSelect = document.getElementById('resTipoEspecial');
+            const vagaInput = document.getElementById('resVagaReservada');
+            
+            if (isEspecial) {
+                tipoSelect.style.display = 'block';
+                vagaInput.style.display = 'block';
+                vagaInput.required = true;
+                // Carregar vagas disponíveis
+                loadVagasDisponiveis();
+            } else {
+                tipoSelect.style.display = 'none';
+                vagaInput.style.display = 'none';
+                vagaInput.required = false;
+                vagaInput.value = '';
+            }
+        }
+        
+        async function loadVagasDisponiveis() {
+            const condominioId = document.getElementById('resCondominioId').value;
+            if (!condominioId) return;
+            
+            try {
+                const response = await fetch(`${API_URL}/sorteio/vagas-disponiveis/${condominioId}`);
+                if (!response.ok) throw new Error('Erro ao carregar vagas disponíveis');
+                const data = await response.json();
+                
+                const vagaInput = document.getElementById('resVagaReservada');
+                if (data.vagasDisponiveis.length > 0) {
+                    vagaInput.placeholder = `Vagas disponíveis: ${data.vagasDisponiveis.join(', ')}`;
+                    vagaInput.min = 1;
+                    vagaInput.max = data.totalVagas;
+                } else {
+                    vagaInput.placeholder = 'Nenhuma vaga disponível';
+                    vagaInput.disabled = true;
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+            }
+        }
+        
+        function displayResidentes(residentes) {
+            const list = document.getElementById('residentesList');
+            if (residentes.length === 0) {
+                list.innerHTML = '<p>Nenhum residente cadastrado</p>';
+                return;
+            }
+            
+            list.innerHTML = residentes.map(r => `
+                <div class="item">
+                    <div class="item-info">
+                        <strong>${r.nome}</strong> - ${r.numeroVeiculos} veículo(s) - Condomínio: ${r.condominioId?.nome || 'N/A'}
+                        ${r.isEspecial ? `<span class="especial-badge">⭐ ${getTipoEspecialText(r.tipoEspecial)} - Vaga #${r.vagaReservada}</span>` : ''}
+                    </div>
+                    <div class="item-actions">
+                        <button onclick="editResidente('${r._id}', '${r.nome}', ${r.numeroVeiculos}, '${r.condominioId?._id}', ${r.isEspecial || false}, '${r.tipoEspecial || ''}', ${r.vagaReservada || null})">Editar</button>
+                        <button class="delete" onclick="deleteResidente('${r._id}')">Excluir</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function getTipoEspecialText(tipo) {
+            const tipos = {
+                'sindico': 'Síndico',
+                'gerente': 'Gerente',
+                'zelador': 'Zelador',
+                'outro': 'Morador Especial'
+            };
+            return tipos[tipo] || 'Morador Especial';
+        }
+        
+        async function createResidente() {
+            const condominioId = document.getElementById('resCondominioId').value;
+            const nome = document.getElementById('resNome').value;
+            const numeroVeiculos = document.getElementById('resVeiculos').value;
+            const isEspecial = document.getElementById('resIsEspecial').checked;
+            const tipoEspecial = document.getElementById('resTipoEspecial').value;
+            const vagaReservada = document.getElementById('resVagaReservada').value;
+            
+            if (!condominioId || !nome || !numeroVeiculos) {
+                alert('Preencha todos os campos obrigatórios');
+                return;
+            }
+            
+            const data = {
+                nome,
+                numeroVeiculos: parseInt(numeroVeiculos),
+                condominioId
+            };
+            
+            if (isEspecial) {
+                if (!vagaReservada) {
+                    alert('Selecione uma vaga reservada para o morador especial');
+                    return;
+                }
+                data.isEspecial = true;
+                data.tipoEspecial = tipoEspecial;
+                data.vagaReservada = parseInt(vagaReservada);
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/residentes`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.mensagem || errorData.error || 'Erro ao criar residente');
+                }
+                
+                document.getElementById('resNome').value = '';
+                document.getElementById('resVeiculos').value = '';
+                document.getElementById('resIsEspecial').checked = false;
+                document.getElementById('resTipoEspecial').style.display = 'none';
+                document.getElementById('resVagaReservada').style.display = 'none';
+                toggleVagaReservada();
+                loadResidentes();
+            } catch (error) {
+                alert('Erro: ' + error.message);
+            }
+        }
+        
+        function editResidente(id, nome, veiculos, condominioId, isEspecial, tipoEspecial, vagaReservada) {
+            const novoNome = prompt('Novo nome:', nome);
+            const novosVeiculos = prompt('Novo número de veículos:', veiculos);
+            
+            if (!novoNome || !novosVeiculos) return;
+            
+            const data = {
+                nome: novoNome,
+                numeroVeiculos: parseInt(novosVeiculos),
+                condominioId
+            };
+            
+            if (isEspecial) {
+                const manterEspecial = confirm('Deseja manter como morador especial?');
+                if (manterEspecial) {
+                    const novaVaga = prompt(`Nova vaga reservada (atual: ${vagaReservada}):`, vagaReservada);
+                    if (novaVaga) {
+                        data.isEspecial = true;
+                        data.tipoEspecial = tipoEspecial;
+                        data.vagaReservada = parseInt(novaVaga);
+                    }
+                } else {
+                    data.isEspecial = false;
+                    data.tipoEspecial = null;
+                    data.vagaReservada = null;
+                }
+            }
+            
+            fetch(`${API_URL}/residentes/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(() => loadResidentes())
+            .catch(error => alert('Erro: ' + error.message));
+        }
+
+        // Residentes CRUD
+async function loadResidentes() {
+    try {
+        const response = await fetch(`${API_URL}/residentes`);
+        if (!response.ok) throw new Error('Erro ao carregar residentes');
+        const residentes = await response.json();
+        displayResidentes(residentes);
+    } catch (error) {
+        console.error('Erro:', error);
+        document.getElementById('residentesList').innerHTML = '<p class="error">Erro ao carregar residentes</p>';
+    }
+}
+
+async function deleteResidente(id) {
+    if (confirm('Tem certeza que deseja excluir este residente?')) {
+        try {
+            const response = await fetch(`${API_URL}/residentes/${id}`, {
+                method: 'DELETE'
+            });
+            
+            if (!response.ok) throw new Error('Erro ao excluir residente');
+            
+            loadResidentes();
+        } catch (error) {
+            alert('Erro: ' + error.message);
+        }
+    }
+}
+        
+        // Atualizar loadCondominiosSelect para incluir evento de mudança
+        const originalLoadCondominiosSelect = loadCondominiosSelect;
+        window.loadCondominiosSelect = async function() {
+            await originalLoadCondominiosSelect();
+            const resCondominioId = document.getElementById('resCondominioId');
+            if (resCondominioId) {
+                resCondominioId.removeEventListener('change', loadVagasDisponiveis);
+                resCondominioId.addEventListener('change', loadVagasDisponiveis);
+            }
+        };
+        
+               // Utensílios CRUD com Reservas
+        async function loadUtensilios() {
+            try {
+                const condominioId = document.getElementById('utilCondominioId').value;
+                const apenasDisponiveis = document.getElementById('mostrarApenasDisponiveisUtil')?.checked || false;
+                
+                let url = `${API_URL}/utensilios`;
+                const params = [];
+                if (condominioId) params.push(`condominioId=${condominioId}`);
+                if (apenasDisponiveis) params.push(`apenasDisponiveis=true`);
+                if (params.length) url += `?${params.join('&')}`;
+                
+                const response = await fetch(url);
+                if (!response.ok) throw new Error('Erro ao carregar utensílios');
+                const utensilios = await response.json();
+                displayUtensilios(utensilios);
+            } catch (error) {
+                console.error('Erro:', error);
+                document.getElementById('utensiliosList').innerHTML = '<p class="error">Erro ao carregar utensílios</p>';
+            }
+        }
+        
+        function displayUtensilios(utensilios) {
+            const list = document.getElementById('utensiliosList');
+            if (utensilios.length === 0) {
+                list.innerHTML = '<p>Nenhum utensílio cadastrado</p>';
+                return;
+            }
+            
+            list.innerHTML = utensilios.map(u => {
+                const isReservado = u.reserva && u.reserva.dataExpiracao && new Date(u.reserva.dataExpiracao) > new Date();
+                const tempoRestante = isReservado ? calcularTempoRestanteUtil(u.reserva.dataExpiracao) : null;
+                
+                return `
+                    <div class="item utensilio-item ${!u.disponivel ? 'reservado' : ''}">
+                        <div class="item-info">
+                            <strong>${escapeHtml(u.nome)}</strong> - Condomínio: ${u.condominioId?.nome || 'N/A'}
+                            ${!u.disponivel && isReservado ? `
+                                <div class="reserva-info">
+                                    <span class="reservado-badge">🔒 RESERVADO</span>
+                                    <div class="reserva-detalhes">
+                                        <span>👤 ${escapeHtml(u.reserva.residenteNome)}</span>
+                                        <span>⏰ Expira em: ${tempoRestante}</span>
+                                        ${u.reserva.motivo ? `<span>📝 Motivo: ${escapeHtml(u.reserva.motivo)}</span>` : ''}
+                                    </div>
+                                </div>
+                            ` : u.disponivel ? '<span class="disponivel-badge">✅ DISPONÍVEL</span>' : ''}
+                        </div>
+                        <div class="item-actions">
+                            ${u.disponivel ? `
+                                <button class="reservar" onclick="abrirModalReservaUtil('${u._id}', '${u.nome}')">Reservar</button>
+                            ` : `
+                                <button class="liberar" onclick="liberarUtensilio('${u._id}')">Liberar</button>
+                            `}
+                            <button onclick="editUtensilio('${u._id}', '${u.nome}', '${u.condominioId?._id}')">Editar</button>
+                            <button class="delete" onclick="deleteUtensilio('${u._id}')">Excluir</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function calcularTempoRestanteUtil(dataExpiracao) {
+            const agora = new Date();
+            const expiracao = new Date(dataExpiracao);
+            const diffMs = expiracao - agora;
+            
+            if (diffMs <= 0) return 'Expirado';
+            
+            const diffHoras = Math.floor(diffMs / (1000 * 60 * 60));
+            const diffMinutos = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+            
+            if (diffHoras > 0) {
+                return `${diffHoras}h ${diffMinutos}min`;
+            }
+            return `${diffMinutos}min`;
+        }
+        
+        // Modal de reserva para utensílios
+        function abrirModalReservaUtil(utensilioId, utensilioNome) {
+            // Criar modal
+            const modal = document.createElement('div');
+            modal.className = 'modal';
+            modal.id = 'modalReservaUtil';
+            modal.innerHTML = `
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>Reservar Utensílio: ${escapeHtml(utensilioNome)}</h3>
+                        <span class="close" onclick="fecharModalUtil()">&times;</span>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label>Selecione o Residente:</label>
+                            <select id="modalResidenteIdUtil"></select>
+                        </div>
+                        <div class="form-group">
+                            <label>Duração (horas):</label>
+                            <select id="modalHorasUtil">
+                                <option value="2">2 horas</option>
+                                <option value="4">4 horas</option>
+                                <option value="8">8 horas</option>
+                                <option value="12">12 horas</option>
+                                <option value="24" selected>24 horas</option>
+                                <option value="48">48 horas</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Motivo (opcional):</label>
+                            <input type="text" id="modalMotivoUtil" placeholder="Ex: Festa, Reunião, Evento, etc.">
+                        </div>
+                        <div class="info-box">
+                            <small>ℹ️ Utensílios podem ser reservados por até 48 horas</small>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button onclick="fecharModalUtil()">Cancelar</button>
+                        <button class="confirmar" onclick="confirmarReservaUtil('${utensilioId}')">Confirmar Reserva</button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            modal.style.display = 'block';
+            
+            // Carregar residentes do condomínio
+            carregarResidentesParaModalUtil();
+        }
+        
+        async function carregarResidentesParaModalUtil() {
+            const condominioId = document.getElementById('utilCondominioId').value;
+            if (!condominioId) {
+                alert('Selecione um condomínio primeiro');
+                fecharModalUtil();
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/residentes?condominioId=${condominioId}`);
+                if (!response.ok) throw new Error('Erro ao carregar residentes');
+                const residentes = await response.json();
+                
+                const select = document.getElementById('modalResidenteIdUtil');
+                select.innerHTML = '<option value="">Selecione um residente</option>' +
+                    residentes.map(r => `<option value="${r._id}">${escapeHtml(r.nome)} ${r.isEspecial ? '⭐' : ''}</option>`).join('');
+            } catch (error) {
+                console.error('Erro:', error);
+                alert('Erro ao carregar residentes');
+            }
+        }
+        
+        async function confirmarReservaUtil(utensilioId) {
+            const residenteId = document.getElementById('modalResidenteIdUtil').value;
+            const horas = parseInt(document.getElementById('modalHorasUtil').value);
+            const motivo = document.getElementById('modalMotivoUtil').value;
+            
+            if (!residenteId) {
+                alert('Selecione um residente');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/utensilios/${utensilioId}/reservar`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ residenteId, horas, motivo: motivo || null })
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.mensagem || data.error || 'Erro ao reservar utensílio');
+                }
+                
+                alert(data.mensagem);
+                fecharModalUtil();
+                loadUtensilios();
+            } catch (error) {
+                alert('Erro: ' + error.message);
+            }
+        }
+        
+        async function liberarUtensilio(utensilioId) {
+            if (!confirm('Tem certeza que deseja liberar este utensílio?')) return;
+            
+            try {
+                const response = await fetch(`${API_URL}/utensilios/${utensilioId}/liberar`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || 'Erro ao liberar utensílio');
+                }
+                
+                alert(data.mensagem);
+                loadUtensilios();
+            } catch (error) {
+                alert('Erro: ' + error.message);
+            }
+        }
+        
+        function fecharModalUtil() {
+            const modal = document.getElementById('modalReservaUtil');
+            if (modal) {
+                modal.remove();
+            }
+        }
+        
+        async function createUtensilio() {
+            const condominioId = document.getElementById('utilCondominioId').value;
+            const nome = document.getElementById('utilNome').value;
+            
+            if (!condominioId || !nome) {
+                alert('Preencha todos os campos');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/utensilios`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nome, condominioId })
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.mensagem || data.error || 'Erro ao criar utensílio');
+                }
+                
+                document.getElementById('utilNome').value = '';
+                loadUtensilios();
+                loadCondominiosSelect();
+            } catch (error) {
+                alert('Erro: ' + error.message);
+            }
+        }
+        
+        function editUtensilio(id, nome, condominioId) {
+            const novoNome = prompt('Novo nome:', nome);
+            if (novoNome && novoNome !== nome) {
+                fetch(`${API_URL}/utensilios/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nome: novoNome, condominioId })
+                })
+                .then(async response => {
+                    const data = await response.json();
+                    if (!response.ok) throw new Error(data.mensagem || data.error);
+                    loadUtensilios();
+                })
+                .catch(error => alert('Erro: ' + error.message));
+            }
+        }
+        
+        async function deleteUtensilio(id) {
+            if (confirm('Tem certeza que deseja excluir este utensílio?')) {
+                try {
+                    const response = await fetch(`${API_URL}/utensilios/${id}`, {
+                        method: 'DELETE'
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (!response.ok) {
+                        throw new Error(data.mensagem || data.error || 'Erro ao excluir utensílio');
+                    }
+                    
+                    alert(data.message || 'Utensílio excluído com sucesso');
+                    loadUtensilios();
+                } catch (error) {
+                    alert('Erro: ' + error.message);
+                }
+            }
+        }
+        
+        // Atualizar loadCondominiosSelect para recarregar utensílios ao mudar condomínio
+        const originalLoadCondominiosSelectUtil = loadCondominiosSelect;
+        window.loadCondominiosSelect = async function() {
+            await originalLoadCondominiosSelectUtil();
+            const utilCondominioId = document.getElementById('utilCondominioId');
+            if (utilCondominioId) {
+                utilCondominioId.removeEventListener('change', () => loadUtensilios());
+                utilCondominioId.addEventListener('change', () => loadUtensilios());
+            }
+        };
+        
+        // Carregar selects de condomínios
+        async function loadCondominiosSelect() {
+            try {
+                const response = await fetch(`${API_URL}/condominios`);
+                const condominios = await response.json();
+                
+                const selects = ['salaCondominioId', 'resCondominioId', 'utilCondominioId', 'sorteioCondominioId'];
+                selects.forEach(selectId => {
+                    const select = document.getElementById(selectId);
+                    select.innerHTML = '<option value="">Selecione um condomínio</option>' +
+                        condominios.map(c => `<option value="${c._id}">${c.nome}</option>`).join('');
+                });
+            } catch (error) {
+                console.error('Erro:', error);
+            }
+        }
+        
+               // Sorteio
+        async function realizarSorteio() {
+            const condominioId = document.getElementById('sorteioCondominioId').value;
+            
+            if (!condominioId) {
+                alert('Selecione um condomínio');
+                return;
+            }
+            
+            // Mostrar loading
+            const div = document.getElementById('sorteioResultado');
+            div.innerHTML = '<div class="loading">Processando sorteio...</div>';
+            
+            try {
+                const response = await fetch(`${API_URL}/sorteio/vagas/${condominioId}`, {
+                    method: 'POST'
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    if (data.error === 'Vagas insuficientes') {
+                        displayErroVagasInsuficientes(data);
+                    } else {
+                        throw new Error(data.error || 'Erro ao realizar sorteio');
+                    }
+                    return;
+                }
+                
+                displaySorteioResultado(data);
+            } catch (error) {
+                div.innerHTML = `<div class="error-message">Erro: ${error.message}</div>`;
+            }
+        }
+        
+        function displayErroVagasInsuficientes(data) {
+            const div = document.getElementById('sorteioResultado');
+            div.innerHTML = `
+                <div class="sorteio-result error-result">
+                    <h3>⚠️ Erro: Vagas Insuficientes</h3>
+                    <div class="error-details">
+                        <p><strong>${data.mensagem}</strong></p>
+                        <div class="stats-box">
+                            <p>📊 Total de veículos: <strong>${data.totalVeiculos}</strong></p>
+                            <p>🅿️ Vagas disponíveis: <strong>${data.vagasDisponiveis}</strong></p>
+                            <p>❌ Déficit de vagas: <strong>${data.deficit}</strong></p>
+                        </div>
+                        <p class="suggestion">💡 Sugestão: Aumente o número de vagas do condomínio ou reduza o número de veículos dos residentes.</p>
+                    </div>
+                </div>
+            `;
+        }
+        
+                function displaySorteioResultado(resultado) {
+            const div = document.getElementById('sorteioResultado');
+            div.innerHTML = `
+                <div class="sorteio-result">
+                    <div class="result-header">
+                        <h3>🎲 Resultado do Sorteio</h3>
+                        <div class="result-date">${new Date(resultado.data).toLocaleString()}</div>
+                    </div>
+                    
+                    <div class="condominio-info">
+                        <h4>🏢 ${resultado.condominio}</h4>
+                    </div>
+                    
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-label">Total de Vagas</div>
+                            <div class="stat-value">${resultado.totalVagas}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Vagas Reservadas</div>
+                            <div class="stat-value">${resultado.vagasReservadas}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Vagas Sorteadas</div>
+                            <div class="stat-value">${resultado.resultadoComuns?.length || 0}</div>
+                        </div>
+                        <div class="stat-card ${resultado.vagasRestantes > 0 ? 'warning' : 'success'}">
+                            <div class="stat-label">Vagas Restantes</div>
+                            <div class="stat-value">${resultado.vagasRestantes}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="estatisticas">
+                        <h4>📈 Estatísticas</h4>
+                        <div class="stats-details">
+                            <p>⭐ Residentes Especiais: ${resultado.estatisticas.residentesEspeciais}</p>
+                            <p>👥 Residentes Comuns: ${resultado.estatisticas.residentesComuns}</p>
+                            <p>🚗 Total de Veículos: ${resultado.estatisticas.totalVeiculos} (${resultado.estatisticas.veiculosEspeciais} especiais + ${resultado.estatisticas.veiculosComuns} comuns)</p>
+                            <p>✅ Residentes contemplados: ${resultado.estatisticas.residentesContemplados} / ${resultado.estatisticas.totalResidentes}</p>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: ${resultado.estatisticas.taxaOcupacao}%"></div>
+                                <span class="progress-text">Taxa de ocupação: ${resultado.estatisticas.taxaOcupacao}%</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    ${resultado.resultadoEspeciais && resultado.resultadoEspeciais.length > 0 ? `
+                        <div class="resultado-vagas especiais">
+                            <h4>⭐ Vagas Reservadas (Moradores Especiais)</h4>
+                            <div class="vagas-grid">
+                                ${resultado.resultadoEspeciais.map(r => `
+                                    <div class="vaga-card especial">
+                                        <div class="vaga-numero">Vaga #${r.numeroVaga} 👑</div>
+                                        <div class="vaga-info">
+                                            <strong>${escapeHtml(r.residenteNome)}</strong>
+                                            <span class="especial-badge">${getTipoEspecialText(r.tipoEspecial)}</span>
+                                            <span class="veiculos-badge">${r.veiculos} veículo(s)</span>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+                    
+                    <div class="resultado-vagas">
+                        <h4>✅ Vagas Sorteadas (${resultado.resultadoComuns?.length || 0})</h4>
+                        <div class="vagas-grid">
+                            ${(resultado.resultadoComuns || []).map(r => `
+                                <div class="vaga-card">
+                                    <div class="vaga-numero">Vaga #${r.numeroVaga}</div>
+                                    <div class="vaga-info">
+                                        <strong>${escapeHtml(r.residenteNome)}</strong>
+                                        <span class="veiculos-badge">${r.veiculos} veículo(s)</span>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    
+                    ${resultado.naoContemplados && resultado.naoContemplados.length > 0 ? `
+                        <div class="nao-contemplados">
+                            <h4>❌ Residentes Comuns Não Contemplados</h4>
+                            <div class="nao-contemplados-grid">
+                                ${resultado.naoContemplados.map(n => `
+                                    <div class="nao-contemplado-card">
+                                        <strong>${escapeHtml(n.nome)}</strong>
+                                        <span class="veiculos-badge">${n.veiculos} veículo(s)</span>
+                                        ${n.veiculosNaoContemplados > 1 ? `<span class="warning-badge">${n.veiculosNaoContemplados} veículos sem vaga</span>` : ''}
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    ` : '<div class="success-message">🎉 Todos os residentes comuns foram contemplados com vagas!</div>'}
+                    
+                    ${resultado.vagasRestantes > 0 ? `
+                        <div class="vagas-restantes">
+                            <h4>🅿️ Vagas Disponíveis</h4>
+                            <p>Existem ${resultado.vagasRestantes} vaga(s) restante(s): ${resultado.vagasNaoUtilizadas?.join(', ') || ''}</p>
+                            <p class="suggestion">💡 Estas vagas podem ser utilizadas para visitantes ou novos residentes.</p>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+        
+        function getTipoEspecialText(tipo) {
+            const tipos = {
+                'sindico': 'Síndico',
+                'gerente': 'Gerente',
+                'zelador': 'Zelador',
+                'outro': 'Especial'
+            };
+            return tipos[tipo] || 'Especial';
+        }
+        
+        // Chat com polling
+        let lastMessageTime = null;
+        
+        async function loadMessages() {
+            try {
+                let url = `${API_URL}/chat/mensagens`;
+                if (lastMessageTime) {
+                    url += `?since=${lastMessageTime}`;
+                }
+                
+                const response = await fetch(url);
+                if (!response.ok) throw new Error('Erro ao carregar mensagens');
+                
+                const messages = await response.json();
+                
+                if (messages.length > 0) {
+                    displayMessages(messages);
+                    lastMessageTime = messages[messages.length - 1].timestamp;
+                }
+            } catch (error) {
+                console.error('Erro ao carregar mensagens:', error);
+            }
+        }
+        
+        function displayMessages(messages) {
+            const chatDiv = document.getElementById('chatMensagens');
+            
+            messages.forEach(msg => {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'chat-message';
+                messageDiv.innerHTML = `
+                    <strong>${escapeHtml(msg.nome)}</strong>
+                    <span class="timestamp">${new Date(msg.timestamp).toLocaleTimeString()}</span>
+                    <div class="message-text">${escapeHtml(msg.mensagem)}</div>
+                `;
+                chatDiv.appendChild(messageDiv);
+            });
+            
+            chatDiv.scrollTop = chatDiv.scrollHeight;
+        }
+        
+        async function enviarMensagem() {
+            const nome = document.getElementById('chatNome').value;
+            const mensagem = document.getElementById('chatMensagem').value;
+            
+            if (!nome || !mensagem) {
+                alert('Preencha nome e mensagem');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/chat/mensagens`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nome, mensagem })
+                });
+                
+                if (!response.ok) throw new Error('Erro ao enviar mensagem');
+                
+                document.getElementById('chatMensagem').value = '';
+                lastMessageTime = null;
+                loadMessages();
+            } catch (error) {
+                alert('Erro ao enviar mensagem: ' + error.message);
+            }
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // Iniciar polling do chat (a cada 2 segundos)
+        setInterval(loadMessages, 2000);
+        
+        // Inicializar
+        loadAllData();
+    </script>
+</body>
+</html>

@@ -1,0 +1,735 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    overflow: hidden;
+}
+
+h1 {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px;
+    text-align: center;
+}
+
+.section {
+    padding: 20px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.section:last-child {
+    border-bottom: none;
+}
+
+h2 {
+    color: #333;
+    margin-bottom: 15px;
+    padding-bottom: 5px;
+    border-bottom: 2px solid #667eea;
+}
+
+.form-group {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.form-group input, .form-group select {
+    flex: 1;
+    min-width: 150px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 14px;
+}
+
+.form-group button {
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: transform 0.2s;
+}
+
+.form-group button:hover {
+    transform: translateY(-2px);
+}
+
+.item {
+    background-color: #f9f9f9;
+    border: 1px solid #e0e0e0;
+    border-radius: 5px;
+    padding: 10px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.item-info {
+    flex: 1;
+}
+
+.item-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.item-actions button {
+    padding: 5px 10px;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.item-actions button:first-child {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.item-actions button.delete {
+    background-color: #f44336;
+    color: white;
+}
+
+.sorteio-result {
+    background-color: #f9f9f9;
+    border: 1px solid #e0e0e0;
+    border-radius: 5px;
+    padding: 15px;
+    margin-top: 15px;
+}
+
+.sorteio-result h3, .sorteio-result h4 {
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.contemplado {
+    background-color: #4CAF50;
+    color: white;
+    padding: 5px 10px;
+    margin: 5px 0;
+    border-radius: 3px;
+}
+
+.nao-contemplado {
+    background-color: #f44336;
+    color: white;
+    padding: 5px 10px;
+    margin: 5px 0;
+    border-radius: 3px;
+}
+
+.chat-container {
+    background-color: #f9f9f9;
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.chat-messages {
+    height: 400px;
+    overflow-y: auto;
+    padding: 15px;
+    background-color: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 5px;
+    margin-bottom: 15px;
+}
+
+.chat-message {
+    background-color: #f1f1f1;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    border-left: 3px solid #667eea;
+}
+
+.chat-message strong {
+    color: #667eea;
+    margin-right: 10px;
+}
+
+.timestamp {
+    font-size: 11px;
+    color: #999;
+}
+
+.message-text {
+    margin-top: 5px;
+    color: #333;
+}
+
+.error {
+    color: #f44336;
+    text-align: center;
+    padding: 10px;
+}
+
+@media (max-width: 768px) {
+    .form-group {
+        flex-direction: column;
+    }
+    
+    .item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .item-actions {
+        margin-top: 10px;
+    }
+}
+
+/* Estilos para o sorteio */
+.loading {
+    text-align: center;
+    padding: 20px;
+    color: #667eea;
+    font-weight: bold;
+}
+
+.sorteio-result {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    border-radius: 10px;
+    padding: 20px;
+    margin-top: 15px;
+}
+
+.sorteio-result.error-result {
+    background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+    border-left: 5px solid #f44336;
+}
+
+.error-details {
+    color: #c62828;
+}
+
+.stats-box {
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    margin: 15px 0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.suggestion {
+    background-color: #fff3e0;
+    padding: 10px;
+    border-radius: 5px;
+    margin-top: 10px;
+    color: #f57c00;
+}
+
+.result-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.result-header h3 {
+    margin: 0;
+    color: #333;
+}
+
+.result-date {
+    font-size: 12px;
+    color: #666;
+}
+
+.condominio-info {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.condominio-info h4 {
+    margin: 0;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.stat-card {
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.stat-card.warning {
+    background: #fff3e0;
+    border-left: 4px solid #ff9800;
+}
+
+.stat-card.success {
+    background: #e8f5e9;
+    border-left: 4px solid #4caf50;
+}
+
+.stat-label {
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 5px;
+}
+
+.stat-value {
+    font-size: 24px;
+    font-weight: bold;
+    color: #333;
+}
+
+.estatisticas {
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.estatisticas h4 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.stats-details p {
+    margin: 5px 0;
+    color: #666;
+}
+
+.progress-bar {
+    background: #e0e0e0;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-top: 10px;
+    position: relative;
+    height: 30px;
+}
+
+.progress-fill {
+    background: linear-gradient(90deg, #4caf50, #8bc34a);
+    height: 100%;
+    transition: width 0.5s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.progress-text {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 12px;
+    font-weight: bold;
+    color: #333;
+    line-height: 30px;
+}
+
+.resultado-vagas, .nao-contemplados {
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.resultado-vagas h4, .nao-contemplados h4 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #333;
+}
+
+.vagas-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.vaga-card {
+    background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+    border-left: 4px solid #4caf50;
+    padding: 12px;
+    border-radius: 8px;
+    transition: transform 0.2s;
+}
+
+.vaga-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.vaga-numero {
+    font-weight: bold;
+    color: #2e7d32;
+    font-size: 16px;
+    margin-bottom: 5px;
+}
+
+.vaga-info {
+    color: #555;
+    font-size: 14px;
+}
+
+.nao-contemplados-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.nao-contemplado-card {
+    background: #fff3e0;
+    border-left: 4px solid #ff9800;
+    padding: 12px;
+    border-radius: 8px;
+    position: relative;
+}
+
+.veiculos-badge {
+    display: inline-block;
+    background: #e0e0e0;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    margin-left: 8px;
+    color: #666;
+}
+
+.warning-badge {
+    display: inline-block;
+    background: #ff9800;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 10px;
+    margin-left: 8px;
+}
+
+.success-message {
+    background: #e8f5e9;
+    color: #2e7d32;
+    padding: 15px;
+    border-radius: 8px;
+    text-align: center;
+    margin-bottom: 20px;
+    border-left: 4px solid #4caf50;
+}
+
+.vagas-restantes {
+    background: #e3f2fd;
+    color: #1976d2;
+    padding: 15px;
+    border-radius: 8px;
+    margin-top: 15px;
+    border-left: 4px solid #2196f3;
+}
+
+.vagas-restantes h4 {
+    margin: 0 0 10px 0;
+    color: #1976d2;
+}
+
+.vagas-restantes p {
+    margin: 0;
+    font-size: 14px;
+}
+
+.error-message {
+    background: #ffebee;
+    color: #c62828;
+    padding: 15px;
+    border-radius: 8px;
+    text-align: center;
+    border-left: 4px solid #f44336;
+}
+
+@media (max-width: 768px) {
+    .stats-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+    
+    .vagas-grid, .nao-contemplados-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .result-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .result-date {
+        margin-top: 5px;
+    }
+}
+
+/* Estilos para moradores especiais */
+.especial-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #ffd700, #ffed4e);
+    color: #8b6914;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: bold;
+    margin-left: 8px;
+}
+
+.vaga-card.especial {
+    background: linear-gradient(135deg, #fff9c4 0%, #fff59d 100%);
+    border-left: 4px solid #ffd700;
+}
+
+.vaga-card.especial .vaga-numero {
+    color: #f57c00;
+}
+
+.resultado-vagas.especiais {
+    background: #fffef7;
+    border: 1px solid #ffe082;
+}
+
+.form-group label {
+    margin: 0;
+    cursor: pointer;
+}
+
+#resTipoEspecial, #resVagaReservada {
+    flex: 0.5;
+    min-width: 120px;
+}
+
+/* Estilos para sala reservada */
+.sala-item.reservado {
+    background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+    border-left: 4px solid #ff9800;
+}
+
+.reservado-badge {
+    display: inline-block;
+    background: #ff9800;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: bold;
+    margin-left: 8px;
+}
+
+.disponivel-badge {
+    display: inline-block;
+    background: #4caf50;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: bold;
+    margin-left: 8px;
+}
+
+.reserva-info {
+    margin-top: 8px;
+    font-size: 12px;
+    color: #666;
+}
+
+.reserva-detalhes {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    margin-top: 5px;
+    padding-left: 10px;
+}
+
+.reserva-detalhes span {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+button.reservar {
+    background: linear-gradient(135deg, #4caf50, #45a049);
+    color: white;
+}
+
+button.liberar {
+    background: linear-gradient(135deg, #ff9800, #f57c00);
+    color: white;
+}
+
+/* Modal */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    animation: fadeIn 0.3s;
+}
+
+.modal-content {
+    background-color: white;
+    margin: 10% auto;
+    border-radius: 10px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+    animation: slideIn 0.3s;
+}
+
+.modal-header {
+    padding: 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 10px 10px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h3 {
+    margin: 0;
+}
+
+.close {
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.close:hover {
+    transform: scale(1.2);
+}
+
+.modal-body {
+    padding: 20px;
+}
+
+.modal-footer {
+    padding: 15px 20px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    border-top: 1px solid #e0e0e0;
+}
+
+.modal-footer button {
+    padding: 8px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: transform 0.2s;
+}
+
+.modal-footer button:hover {
+    transform: translateY(-2px);
+}
+
+.modal-footer button.confirmar {
+    background: linear-gradient(135deg, #4caf50, #45a049);
+    color: white;
+}
+
+.modal-footer button:first-child {
+    background: #999;
+    color: white;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideIn {
+    from { transform: translateY(-50px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+/* Responsividade para salas */
+@media (max-width: 768px) {
+    .reserva-detalhes {
+        flex-direction: column;
+        gap: 5px;
+    }
+    
+    .modal-content {
+        margin: 30% auto;
+        width: 95%;
+    }
+}
+
+/* Estilos para utensílios reservados */
+.utensilio-item.reservado {
+    background: linear-gradient(135deg, #e8eaf6 0%, #c5cae9 100%);
+    border-left: 4px solid #3f51b5;
+}
+
+.info-box {
+    background: #e3f2fd;
+    padding: 10px;
+    border-radius: 5px;
+    margin-top: 10px;
+    font-size: 12px;
+    color: #1976d2;
+    text-align: center;
+}
+
+/* Animações para itens reservados */
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; }
+    100% { opacity: 1; }
+}
+
+.reservado-badge {
+    animation: pulse 2s infinite;
+}
+
+/* Estilo para o select de horas */
+#modalHorasUtil, #modalHoras {
+    cursor: pointer;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .utensilio-item .reserva-detalhes {
+        font-size: 11px;
+    }
+    
+    #modalHorasUtil, #modalHoras {
+        font-size: 14px;
+        padding: 8px;
+    }
+}
